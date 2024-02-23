@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Details{% endblock title %}
+
+{% block content %}
+
+<h2>Payment Details</h2>
+<form method="post" action="{% url 'payment_page' %}">
+    {% csrf_token %}
+    <label for="card_number">Card Number:</label>
+    <input type="text" id="card_number" name="card_number" required><br><br>
+    <label for="billing_info">Billing Info:</label>
+    <input type="text" id="billing_info" name="billing_info" required><br><br>
+    <label>Charge: ${{ charge }}</label><br><br>
+    <button type="submit">Submit Payment</button>
+</form>
+
+{% endblock %}

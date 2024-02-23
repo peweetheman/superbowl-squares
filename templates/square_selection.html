@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Select Your Square{% endblock title %}
+
+{% block content %}
+<h2>Select Your Square</h2>
+<form method="post" action="" onsubmit="return validateForm()">
+    {% csrf_token %}
+    <input type="hidden" id="selected_squares" name="selected_squares">
+    <label for="first_name">First Name:</label>
+    <input type="text" id="first_name" name="first_name" required><br><br>
+    <label for="last_name">Last Name:</label>
+    <input type="text" id="last_name" name="last_name" required><br><br>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required><br><br>
+
+    <div class="team-horizontal team-name">Chiefs</div>
+    <div class="grid-container">
+        <div class="team-vertical team-name">Niners</div>
+        <div class="grid">
+            <div class="header-row">
+                <div class="corner-square"></div>
+                {% for i in grid_size %}
+                <div class="header-square column-header">{{ i }}</div>
+                {% endfor %}
+            </div>
+            {% for row in squares %}
+            <div class="grid-row">
+                <div class="header-square row-header">1</div>
+                {% for s in row %}
+                <div class="grid-square {% if s.taken %}taken{% else %}available{% endif %}"
+                    onclick="selectSquare(this, '{{ s.number }}')">
+                    <span class="square-number">{{ s.number }}</span>
+                    <span class="owner-name">{{ s.owner }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <button type="submit">Proceed to Payment</button>
+</form>
+
+<script>
+    let selectedSquares = []; // Initialize an empty array for selected squares
+
+    function validateForm() {
+        if (selectedSquares.length === 0) {
+            alert("Please select at least one square before submitting.");
+            return false; // Prevent form submission
+        }
+        return true; // Allow form submission
+    }
+
+    function selectSquare(element, squareId) {
+        const index = selectedSquares.indexOf(squareId);
+        if (element.classList.contains('taken')) {
+            // Square is unavailable
+            return;
+        }
+        if (index > -1) {
+            // Square is already selected; remove it from selection
+            selectedSquares.splice(index, 1);
+            element.classList.remove('selected');
+            element.classList.add('available');
+        } else {
+            // Square is not selected; add it to selection
+            selectedSquares.push(squareId);
+            element.classList.add('selected');
+            element.classList.remove('available');
+        }
+
+        // Update hidden input value to store all selected squares
+        document.getElementById('selected_squares').value = selectedSquares.join(',');
+    }
+</script>
+{% endblock content %}

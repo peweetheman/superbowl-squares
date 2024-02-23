@@ -1,0 +1,144 @@
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f7f7f7;
+}
+
+/* Container for the grid and the vertical name */
+.grid-container {
+  display: flex;
+  align-items: center;
+  /* Align 'Niners' vertically with the grid */
+}
+
+
+/* Team Names Styling */
+.team-name {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: bold;
+  font-size: xx-large;
+  /* Reduced space below the team names */
+}
+
+/* Adjust the vertical team name */
+.team-vertical {
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  margin-right: 10px;
+  /* Spacing between the vertical title and the grid */
+}
+
+.team-horizontal {
+  margin-left: 20px;
+  /* Reduced to align with the smaller grid squares */
+}
+
+/* Grid Styling */
+.grid {
+  display: grid;
+  grid-template-columns: 75px repeat(10, 85px);
+  /* Smaller header and squares */
+  margin-left: 25px;
+}
+
+.header-row,
+.grid-row {
+  display: contents;
+}
+
+.corner-square,
+.header-square {
+  background-color: #000;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  /* Adjusted for smaller header squares */
+}
+
+.column-header {
+  height: 25px;
+}
+
+.row-header {
+  width: 30px;
+}
+
+/* Individual Squares Styling */
+.grid-square {
+  border: 1px solid #ddd;
+  background-color: #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 70px;
+  /* Fixed width for squares */
+  height: 40px;
+  /* Fixed height for squares */
+}
+
+.grid-square.taken {
+  background-color: #ffc107;
+}
+
+.grid-square.selected {
+  background-color: #8cbfe9;
+}
+
+/* Number and Owner Name inside the Square */
+.square-number,
+.owner-name {
+  font-size: 0.7em;
+  /* Smaller text to fit the reduced square size */
+  color: #333;
+}
+
+.square-number {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+}
+
+.owner-name {
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
+/* Hover Effects */
+.grid-square:hover {
+  background-color: #e0e0e0;
+}
+
+.grid-square.taken:hover {
+  background-color: #ffca28;
+}
+
+.grid-square.selected:hover {
+  background-color: #539dde;
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 15px repeat(10, 25px);
+    /* Adjust for smaller screens */
+  }
+
+  .header-square,
+  .grid-square {
+    height: 25px;
+    /* Smaller squares for responsive design */
+  }
+}
