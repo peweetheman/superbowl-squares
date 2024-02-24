@@ -1,10 +1,11 @@
 from django.http import HttpResponse
-import requests
 from django.shortcuts import render, redirect
 from django.conf import settings  # Assuming your Neon CRM credentials are stored in settings
 import logging
+from datetime import datetime
 from ast import literal_eval
 from .models import TakenSquare
+from .neon_api import create_donation
 
 logger = logging.getLogger('django')
 cost_per_square = 20
@@ -34,19 +35,42 @@ def square_selection(request):
         return render(request, 'square_selection.html', {'grid_size': grid_size, 'squares': squares})
     
 def payment_page(request):
+    selected_squares = get_selected_squares(request)
+    charge = cost_per_square * len(selected_squares)  # Calculate the charge based on the number of selected squares
+    current_year = datetime.now().year
+    context = {
+        'months': range(1, 13),
+        'years': range(current_year, current_year + 10),
+        'charge': charge,
+        'retry_payment': False, 
+    }
+
     if request.method == 'POST':
         # Retrieve form data from session
         form_data = request.session.get('form_data', {})
         card_number = request.POST.get('card_number')
-        billing_info = request.POST.get('billing_info')
+        expiration_date = request.POST.get('expiration_date')
+        expiration_year = request.POST.get('expiration_year')
+        card_type = request.POST.get('card_type')
+        cvv2 = request.POST.get('cvv2')
+        card_holder = request.POST.get('name_on_card')
         
-        selected_squares = get_selected_squares(request)
-        charge = cost_per_square * len(selected_squares)  # Calculate the charge based on the number of selected squares
+        # submit donation with relevant data
+        donation_succeeded = create_donation(
+            first_name=form_data['first_name'],
+            last_name=form_data['last_name'],
+            email=form_data['email'],
+            amount=charge,
+            card_number=card_number,
+            expiration_month=expiration_date,
+            expiration_year=expiration_year,
+            card_type=card_type,
+            cvv2=cvv2,
+            card_holder=card_holder
+        )
 
-        # TODO: Call submit_donation with relevant data
-        
         # Save selected squares to database
-        if selected_squares:
+        if donation_succeeded and selected_squares:
             for square in selected_squares:
                 row, column = square  # Unpack the tuple
                 TakenSquare.objects.create(
@@ -57,35 +81,18 @@ def payment_page(request):
                     column=column
                 )
         
-        try:
-            del request.session['form_data']
-        except KeyError:
-            logger.error('Error deleting form_data from session.')
-
         # Redirect or render a response
-        return redirect('success_page')
+        if donation_succeeded:
+            try:
+                del request.session['form_data']
+            except KeyError:
+                logger.error('Error deleting form_data from session.')
+            return redirect('success_page')
+        else: 
+            context['retry_payment'] = True
+            return render(request, 'payment_page.html', context)
     else:
-        selected_squares = get_selected_squares(request)            
-        logger.info("Selected square info", selected_squares, len(selected_squares))
-    
-        charge = cost_per_square * len(selected_squares)  # Adjust charge calculation as necessary
-        return render(request, 'payment_page.html', {'charge': charge})
-
-def submit_donation(cardnumber, address, donor_name, amount):
-    # Prepare your payload here. Example:
-    payload = {
-        "donorName": donor_name,
-        "amount": amount,
-        # Populate other required fields as per your application's context
-    }
-    # Prepare the headers with basic authentication
-    headers = {
-        'Authorization': 'Basic YOUR_ENCODED_CREDENTIALS_HERE',
-        'Content-Type': 'application/json',
-    }
-    # Send the request to Neon CRM API
-    response = requests.post('https://api.neoncrm.com/v2/donations', json=payload, headers=headers)
-
+        return render(request, 'payment_page.html', context)
 
 def success_page(request):
     return render(request, 'success_page.html')
