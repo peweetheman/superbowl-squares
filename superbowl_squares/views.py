@@ -80,7 +80,7 @@ def payment_page(request):
             amount=charge,
             card_number=card_number,
             expiration_month=expiration_date.split('/')[0],
-            expiration_year="20" + expiration_year.split('/)[1],
+            expiration_year="20" + expiration_date.split('/')[1],
             card_type=card_type,
             cvv2=cvv2,
             card_holder=card_holder
