@@ -7,13 +7,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Default Title{% endblock title %}</title>
-    <link rel="stylesheet" href="{% static '/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?{% now 'U' %}">
+    <style>
+        html,
+        body {
+            height: 100%;
+            background-image: url('{% static "images/house_background.jpeg" %}');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+    {% block js %}{% endblock js %}
 </head>
 
 <body>
-    {% block content %}
-    <!-- Default content goes here -->
-    {% endblock content %}
+    <div class="header">
+        <a href="https://www.harborhouseofrochester.org/">
+            <img src="{% static 'images/harbor_house_logo.png' %}" alt="Harbor House Logo">
+        </a>
+        <div class="header-nav">
+            <a href="https://www.harborhouseofrochester.org/" class="neonfront_link">Home</a>
+            <a href="https://www.harborhouseofrochester.org/our-history/" class="neonfront_link">About Us</a>
+            <a href="https://www.harborhouseofrochester.org/contact-us/" class="neonfront_link">Contact Us</a>
+        </div>
+    </div>
+    <div class="content-wrapper"> <!-- Wrapper to center the .content block -->
+        <div class="content">
+            {% block content %}
+            <!-- Default content goes here -->
+            {% endblock content %}
+        </div>
+    </div>
 </body>
 
 </html>

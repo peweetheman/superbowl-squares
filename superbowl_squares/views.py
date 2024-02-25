@@ -1,12 +1,12 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from django.conf import settings  # Assuming your Neon CRM credentials are stored in settings
 import logging
 from datetime import datetime
 from ast import literal_eval
 from .models import TakenSquare
 from .neon_api import create_donation
-
+from card_identifier.cardutils import format_card, validate_card
+from card_identifier.card_type import identify_card_type
 logger = logging.getLogger('django')
 cost_per_square = 20
 
@@ -16,6 +16,7 @@ def square_selection(request):
         request.session['form_data'] = {
             'first_name': request.POST.get('first_name'),
             'last_name': request.POST.get('last_name'),
+            'display_name': request.POST.get('display_name'),
             'email': request.POST.get('email'),
             'selected_squares': request.POST.get('selected_squares'),
         }
@@ -30,40 +31,56 @@ def square_selection(request):
         taken_squares = TakenSquare.objects.all()
         for taken_square in taken_squares:
             squares[taken_square.row][taken_square.column]['taken'] = True
-            squares[taken_square.row][taken_square.column]['owner'] = f"{taken_square.first_name} {taken_square.last_name}"
+            if taken_square.display_name is not None and taken_square.display_name != "":
+                squares[taken_square.row][taken_square.column]['owner'] = f"{taken_square.display_name}"
+            else: 
+                squares[taken_square.row][taken_square.column]['owner'] = f"{taken_square.first_name} {taken_square.last_name}"
 
         return render(request, 'square_selection.html', {'grid_size': grid_size, 'squares': squares})
     
 def payment_page(request):
     selected_squares = get_selected_squares(request)
-    charge = cost_per_square * len(selected_squares)  # Calculate the charge based on the number of selected squares
+    num_squares = len(selected_squares)
+    charge = cost_per_square * num_squares  # Calculate the charge based on the number of selected squares
     current_year = datetime.now().year
     context = {
         'months': range(1, 13),
         'years': range(current_year, current_year + 10),
-        'charge': charge,
+        'charge': f"${charge:.2f}",
+        'cost_per_square': f"(${cost_per_square} per square)",
         'retry_payment': False, 
     }
 
     if request.method == 'POST':
         # Retrieve form data from session
         form_data = request.session.get('form_data', {})
-        card_number = request.POST.get('card_number')
-        expiration_date = request.POST.get('expiration_date')
-        expiration_year = request.POST.get('expiration_year')
-        card_type = request.POST.get('card_type')
-        cvv2 = request.POST.get('cvv2')
-        card_holder = request.POST.get('name_on_card')
+        card_number = request.POST.get('cardnumber').replace(' ', '')
+        expiration_date = request.POST.get('expirationdate')
+        cvv2 = request.POST.get('securitycode')
+        card_holder = request.POST.get('cardholder')
         
+        # Get the card type and validate
+        try:
+            card_number = format_card(card_number)
+            if not validate_card(card_number):
+                raise Exception("Invalid card")
+            card_type = identify_card_type(card_number)
+        except Exception as e:
+            print(e)
+            context['retry_payment'] = True
+            return render(request, 'payment_page.html', context)
+
+
         # submit donation with relevant data
+        # donation_succeeded = True
         donation_succeeded = create_donation(
             first_name=form_data['first_name'],
             last_name=form_data['last_name'],
             email=form_data['email'],
             amount=charge,
             card_number=card_number,
-            expiration_month=expiration_date,
-            expiration_year=expiration_year,
+            expiration_month=expiration_date.split('/')[0],
+            expiration_year="20" + expiration_year.split('/)[1],
             card_type=card_type,
             cvv2=cvv2,
             card_holder=card_holder
@@ -76,6 +93,7 @@ def payment_page(request):
                 TakenSquare.objects.create(
                     first_name=form_data['first_name'],
                     last_name=form_data['last_name'],
+                    display_name=form_data['display_name'],
                     email=form_data['email'],
                     row=row,
                     column=column

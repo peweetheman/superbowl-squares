@@ -4,6 +4,7 @@ class TakenSquare(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     email = models.EmailField()
+    display_name = models.CharField(max_length=255)
     row = models.IntegerField()
     column = models.IntegerField()
 
